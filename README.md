@@ -171,7 +171,7 @@ with Tensorflow 2 in mind.
 
 You will need weights for your own udnn model, since we are not going to
 implement training in this project. You can either perform a post-training
-quantization on your weights, or use quantized weights when training.
+quantization on your weights, or use quantized weights when training (for Task 4).
 
 If you're unsure about how to set up a network to train or how to obtain
 the dataset, keras' official website has an excellent
@@ -223,7 +223,7 @@ how to use the SIMD library. In particular `TEST(simd, add)` demonstrates
 idiomatic way to write SIMD arithmetic.
 
 Keep in mind that not all layers can be implemented in SIMD easily, such as
-Dropout layer. You need some tricks such as masks to implement it.
+Dropout layer.
 
 Once you're done, you can use the unit tests you wrote from Task 2 to test
 against your SIMD implementation. They should pass all the tests if your
@@ -247,11 +247,16 @@ more cache friendly!
 
 You should at least compare the following two cases with variable data types,
 such as `int8`, `int16`, `int32`, `flaot32`, and `double`:
-1. Benchmark performance impact on Intel and ARM CPU (all data types). 
+1. Benchmark performance impact on Intel (all data types).
 2. Benchmark against Tensorflow on Intel CPU (`float32` and `double`).
 3. Benchmark against Tensorflow-Lite on ARM CPU (optional).
+4. Benchmark performance impact on ARM (all data types). You're free to write
+either C++ or Python for benchmark. Notice that Python version takes a while to
+compile.
 
-Besides timing numbers, you should always include prediction accuracies.
+For part 1, 2, and 3, you have to use your model and weights trained from
+Task 1. For part 4, random weights are allowed.
+
 Notice that Tensorflow CPU requires the Conv2D layer to be at least floats;
 you only need to include `float32` and `double` on Intel CPU.
 
