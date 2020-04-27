@@ -1,6 +1,5 @@
 from _udnn import Model as _Model, TensorBase
 import numpy as np
-import tensorflow as tf
 from .tensor import tensor
 
 
@@ -38,7 +37,7 @@ class Model:
     @staticmethod
     def __get_weights(weights, w_i):
         w_ = weights[w_i]
-        if isinstance(w_, tf.Variable):
+        if hasattr(w_, "numpy"):
             w_ = w_.numpy()
         return w_
 
