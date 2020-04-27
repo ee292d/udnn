@@ -20,7 +20,7 @@ Stanford's linux machines.
 
 #### Prerequisite
 - A C\++14 compiler: GCC 5.4+ or Clang++ 3.4+
-- `cmake` 3.1+
+- `cmake` 3.8+
 - Python with development package installed
 
 If you are on a debian based system, you can do
