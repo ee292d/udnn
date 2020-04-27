@@ -40,6 +40,10 @@ class CMakeBuild(build_ext):
         tag = platform.system().lower()
         return tag == "windows"
 
+    @staticmethod
+    def is_mendel():
+        return "mendel" in platform.platform()
+
     def build_extension(self, ext):
         extdir = os.path.abspath(
             os.path.dirname(self.get_ext_fullpath(ext.name)))
@@ -72,7 +76,9 @@ class CMakeBuild(build_ext):
             make_program = env["MAKE_PROGRAM"]
             cmake_args += [R"-DCMAKE_MAKE_PROGRAM=" + make_program]
 
-        cpu_count = max(2, multiprocessing.cpu_count() // 2)
+        cpu_count = max(1, multiprocessing.cpu_count() // 2)
+        if self.is_mendel():
+            cpu_count = 1
         build_args += ['--', '-j{0}'.format(cpu_count)]
 
         python_path = sys.executable
