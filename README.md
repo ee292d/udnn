@@ -103,9 +103,9 @@ by `TensorSize`, whose dimension is defined as `(y, x, c, k)`, where
 
 Since `Tensor` is a templated class, to instantiate a `Tensor` object, you need
 to provide a type, such as `Tensor<int>`. To access the content, you can use
-`auto a = t(x, y, c, k)` or `auto a = t(x, y, c)`, where t is the `Tensor`
+`auto a = t(y, x, c, k)` or `auto a = t(y, x, c)`, where t is the `Tensor`
 object. To assign values to the tensor object, you can simply do
-`t(x, y, c, k) = value`.
+`t(y, x, c, k) = value`.
 
 Defined in `src/layer.hh`, the `Layer` class is templated in the same way as
 the `Layer` class. The base class has already populated some default
