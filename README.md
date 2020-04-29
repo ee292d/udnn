@@ -193,7 +193,7 @@ layers you used in Task 1:
 - Sigmoid
 - Flatten
 - MaxPooling2D
-- MinPooling2D
+- MinPooling2D [optional]
 - DropOut
 
 To add a custom layer to Python binding, you can look at the following code in
