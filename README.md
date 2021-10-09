@@ -237,11 +237,10 @@ You will need weights for your own udnn model, since we are not going to
 implement training in this project.
 
 If you're unsure about how to set up a network to train or how to obtain
-the dataset, keras' official website has an excellent
-[code example](https://keras.io/examples/cifar10_cnn/) of setting
-up basic layers and train them against CIFAR-10. All the layers used in the code
-example are required in Task 2. Notice that you have to port that code
-into Tensorflow2 keras interface, which is trivial to do.
+the dataset, Tensorflow' official website has an excellent
+[code example](https://www.tensorflow.org/tutorials/images/cnn) of setting
+up basic layers and train them against CIFAR-10. Keep in mind that you have to
+implement all the layers from scratch in Task 2, so don't be too fancy!
 
 ### Task 2: Implement layers in C++
 You will implement these layers in C++ using the given starter code. For each
