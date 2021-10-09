@@ -6,13 +6,14 @@
 #include <stdexcept>
 #include <vector>
 #include <xsimd/xsimd.hpp>
+#include <random>
 
 struct TensorSize {
 public:
   uint32_t y, x, c;
   uint32_t k = 1;
 
-  inline std::string str() const {
+  [[nodiscard]] inline std::string str() const {
     return "(" + std::to_string(x) + ", " + std::to_string(y) + ", " +
            std::to_string(c) + ", " + std::to_string(k) + ")";
   }
@@ -36,9 +37,9 @@ public:
   // whether this tensor object owned the data
   bool owned = true;
 
-  virtual void *ptr() const = 0;
+  [[nodiscard]] virtual void *ptr() const = 0;
 
-  virtual size_t element_size() const = 0;
+  [[nodiscard]] virtual size_t element_size() const = 0;
 };
 
 template <typename T> class Tensor : public TensorBase {
@@ -49,7 +50,7 @@ public:
   inline T *data() const {
     return owned ? const_cast<T *>(owned_data_.data()) : data_;
   }
-  inline void *ptr() const override { return reinterpret_cast<void *>(data()); }
+  [[nodiscard]] inline void *ptr() const override { return reinterpret_cast<void *>(data()); }
 
   inline Tensor(void *data, const TensorSize &size, const TensorSize &stride,
                 bool copy = false) {
@@ -61,6 +62,7 @@ public:
       this->stride_ = TensorSize::default_stride(size);
       owned_data_.resize(total_size);
       this->copy(size, stride, p);
+      this->data_ = owned_data_.data();
     } else {
       // beware of the stride difference!
       this->data_ = p;
@@ -76,6 +78,7 @@ public:
     owned_data_.resize(x * y * c * k);
     size = {y, x, c, k};
     stride_ = TensorSize::default_stride(size);
+    data_ = owned_data_.data();
   }
 
   inline explicit Tensor(const TensorSize &size)
@@ -198,11 +201,30 @@ public:
 
   // the shape is height, width, channel
   // we have channel last implementation, which is the default for tf
-  inline TensorSize stride() const { return stride_; }
+  [[nodiscard]] inline TensorSize stride() const { return stride_; }
 
-  inline size_t element_size() const override { return sizeof(T); }
+  [[nodiscard]] inline size_t element_size() const override { return sizeof(T); }
 
   inline static std::size_t simd_size() { return xsimd::simd_type<T>::size; }
+
+  // randomize the content
+  void randomize(T min, T max) {
+    std::random_device rd;
+    std::mt19937 engine(rd());
+
+    auto const total_size = size.x * size.y * size.c * size.k;
+    if constexpr (std::is_same<T, float>::value || std::is_same<T, double>::value) {
+      std::uniform_real_distribution<> d(min, max);
+      for (auto i = 0; i < total_size; i++) {
+        data_[i] = d(engine);
+      }
+    } else {
+      std::uniform_int_distribution<> d(min, max);
+      for (auto i = 0; i < total_size; i++) {
+        data_[i] = d(engine);
+      }
+    }
+  }
 
 private:
   vector_type owned_data_;

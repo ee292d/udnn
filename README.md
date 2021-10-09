@@ -200,7 +200,7 @@ To test out native C++ tests, simply do `make test` in your `build` folder.
 To test out python-based tests, first install `pytest` then use `pytest`:
 
 ```
-pip install pytest
+pip install pytest tensorflow
 pytest test/
 ```
 
@@ -329,8 +329,9 @@ for C++. To do so, use the following cmake command inside your build folder:
 cmake .. -DCMAKE_BUILD_TYPE=Release
 ```
 
-We have included the example benchmark code in `benchmark/main.cc`. Feel free
-to build your C++ benchmark code on top of that.
+We have included the example C++ benchmark code in `benchmark/benchmark.cc`
+and Python benchmark code in `benchmark/benchmark.py`. Feel free
+to build your own benchmark code on top of that.
 
 ### Extra credit:
 Given the nature of this project, only the sky is the limit! Here is an

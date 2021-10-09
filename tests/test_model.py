@@ -6,7 +6,7 @@ import tensorflow as tf
 
 def build_model():
     model = Model()
-    # FCN
+    # All conv
     model.add_layer("conv0", Conv2D((64, 64, 3), "int8", 3, 2))
     model.add_layer("conv1", Conv2D((62, 62, 2), "int8", 3, 1))
     return model

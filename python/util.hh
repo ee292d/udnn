@@ -117,7 +117,8 @@ template <typename T> py::class_<Tensor<T>> setup_tensor(py::module &m) {
              return t(y, x, c);
            })
       .def("dump", py::overload_cast<const std::string &>(&Tensor<T>::dump))
-      .def("load", &Tensor<T>::load_from_file);
+      .def("load", &Tensor<T>::load_from_file)
+      .def("randomize", &Tensor<T>::randomize);
 }
 
 
