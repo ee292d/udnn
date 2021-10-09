@@ -310,8 +310,10 @@ more cache friendly!
 
 You should at least compare the following two cases with variable data types,
 such as `int8`, `int16`, `int32`, `flaot32`, and `double`:
-1. Benchmark performance impact on Intel (all data types).
-2. Benchmark against Tensorflow on Intel CPU (`float32` and `double`).
+1. Benchmark performance impact on Intel (all data types in C++) on `Conv2D`
+   and `Dense` layers.
+2. Benchmark against Tensorflow on Intel CPU (`float32` and `double`) on model
+   predication. This should be done in Python.
 3. Benchmark performance impact on ARM (all data types) in C++ with SIMD
    and without SIMD.
 
@@ -326,6 +328,9 @@ for C++. To do so, use the following cmake command inside your build folder:
 ```
 cmake .. -DCMAKE_BUILD_TYPE=Release
 ```
+
+We have included the example benchmark code in `benchmark/main.cc`. Feel free
+to build your C++ benchmark code on top of that.
 
 ### Extra credit:
 Given the nature of this project, only the sky is the limit! Here is an
