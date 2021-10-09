@@ -3,8 +3,8 @@
 ## Overview
 In this project, you will implement an inference-only DNN framework that is
 capable of running various kinds of network architectures on CPU with native
-instructions. You will be able to transfer your (quantized) weights from
-TensorFlow based models and use them in your own DNN framework.
+instructions. You will be able to transfer your (potentially quantized) weights
+from TensorFlow based models and use them in your own DNN framework.
 
 ## Getting started
 We will be distributing assignments with git. Here is what you need to do to
@@ -27,12 +27,59 @@ If you are on a debian based system, you can do
 ```
 sudo apt install cmake g++ python3 python3-dev
 ```
-If you do not have sudo access to the Linux machine, e.g., on `cardinal`, you
-can install cmake through `pip install cmake` after setting up virtual
-environment (see [how to build the Python binding](#build-the-python-binding)).
-Notice that if you're on `cardinal`, you won't be able to run the latest
-Tensorflow2 due to lack of AVX instructions. You need to back port the tests
-to older version of Tensorflow.
+
+Although the code works for Mac and Windows, we highly recommend you to work with a
+Linux machine. You can use Stanford shared compute clusters such as `cardinal` if you
+don't have direct access to a linux machine. Below are instructions on how to set it
+up on `cardinal`.
+
+1. SSH into a cardinal machine with your SUNet ID. Notice that there is a 2-step auth protection.
+  ```
+  ssh [your_sunet_id]@cardinal.stanford.edu
+  ```
+2. Setting up a virtual environnement called `env`:
+  ```
+  virtualenv --python=/usr/bin/python3 env
+  ```
+3. Activate the env
+  ```
+  source env/bin/activate
+  ```
+4. Download the tensorflow wheel without AVX instruction. This is necessary because the stanford PyPI
+  wheel compiles against AVX but `cardinal` machines doesn't have one
+  ```
+  wget https://tf.novaal.de/barcelona/tensorflow-2.4.3-cp36-cp36m-linux_x86_64.whl
+  ```
+5. Install dependencies, which may take a while
+  ```
+  pip install cmake tensorflow-2.4.3-cp36-cp36m-linux_x86_64.whl
+  ```
+6. Test out if tensorflow has installed properly
+  ```
+  python -c "import tensorflow"
+  ```
+
+Part of the assignment requires you to set up tensorflow environment on EdgeTPU. Here are the instructions:
+1. Make sure your coral board has internet access
+2. Update the package list. Hit `y` if it prompts any error
+3. Install virtualenv and cmake
+   ```
+   sudo apt install python3-virtualenv cmake python3-dev -y
+   ```
+4. Set up virtualenv
+   ```
+   python3 -m virtualenv --python=/usr/bin/python3 env
+   ```
+5. Activate the virtualenv env
+   ```
+   source env/bin/activate
+   ```
+6. Install tensorflow2. There is no official build for our platform so we will use
+   a community build. WARNING: this will take a long time to install!
+   ```
+   wget https://github.com/bitsy-ai/tensorflow-arm-bin/releases/download/v2.4.0/tensorflow-2.4.0-cp37-none-linux_aarch64.whl
+   pip install tensorflow-2.4.0-cp37-none-linux_aarch64.whl
+   ```
 
 ##### Build the native C++ code
 Once you're in the root folder of the project, do
@@ -56,8 +103,8 @@ the project to make the tests green!
 ##### Build the Python binding
 It is always a good idea to use some sort of virtual environment when using
 Python to isolate different Python packages. To do so, you can use
-`virtualenv` or any Python virtual environment package you prefer. In the
-project root folder, do
+`virtualenv` or any Python virtual environment package you prefer. If you haven't
+done already, in the project root folder, do
 ```
 virtualenv --python=python3 env
 source env/bin/activate
@@ -131,14 +178,14 @@ learn or experiment more about the Python bindings.
 ### Python helper code
 `udnn/tensor.py` offers some utility functions to instantiate or convert numpy
 array into tensor, the usage is
-```
+```Python
 t = tensor((4, 3, 2, 1), "int8")
 ```
 If we want to instantiate a `Tensor` with signed 8-bit byte and shape
 `(4, 3, 2, 1)`.
 Since we have implemented standard Python buffer protocol for you, you can also
 pass in a numpy array with corresponding type:
-```
+```Python
 array = np.ones((4, 3, 2, 1), dtype="int8")
 t = tensor(array, dtype="int8")
 ```
@@ -159,6 +206,34 @@ familiar with the environment. They primarily serve as an example of how to
 use the starter code API. You should definitely add more tests as you implement
 more layers and models as you finish up the project.
 
+To test out native C++ tests, simply do `make test` in your `build` folder.
+
+To test out python-based tests, first install `pytest` then use `pytest`:
+
+```
+pip install pytest
+pytest test/
+```
+
+### A Note on Debugging
+Because this project involves testing both C++ and its Python binding, debugging can
+be a pain. Here is the recommended debugging strategy:
+
+1. Write your C++ unit test first. You can either use `gdb` or simple print statement
+to figure out which parts is wrong.
+2. Once C++ is working, write out your Python tests. If you want to use `gdb` for
+testing, you need to compile the Python binding with debugging symbol:
+
+  ```
+  $ DEBUG=1 pip install -e .
+  ```
+
+  Then gdb the python binary
+  ```
+  gdb python
+  ```
+  Then run your script in `gdb` with `run` command.
+
 ## Project Tasks
 There are several task you need to accomplish in this project. Although they are
 not required to be completed in order, it is highly recommended to do so as it
@@ -170,8 +245,7 @@ Although you're free to use any framework you want, the start code is provided
 with Tensorflow 2 in mind.
 
 You will need weights for your own udnn model, since we are not going to
-implement training in this project. You can either perform a post-training
-quantization on your weights, or use quantized weights when training (for Task 4).
+implement training in this project.
 
 If you're unsure about how to set up a network to train or how to obtain
 the dataset, keras' official website has an excellent
@@ -249,13 +323,10 @@ You should at least compare the following two cases with variable data types,
 such as `int8`, `int16`, `int32`, `flaot32`, and `double`:
 1. Benchmark performance impact on Intel (all data types).
 2. Benchmark against Tensorflow on Intel CPU (`float32` and `double`).
-3. Benchmark against Tensorflow-Lite on ARM CPU (optional).
-4. Benchmark performance impact on ARM (all data types). You're free to write
-either C++ or Python for benchmark. Notice that Python version takes a while to
-compile.
+4. Benchmark performance impact on ARM (all data types).
 
-For part 1, 2, and 3, you have to use your model and weights trained from
-Task 1. For part 4, random weights are allowed.
+It is highly recommend to use your model and wrights trained from Task 1
+for benchmark.
 
 Notice that Tensorflow CPU requires the Conv2D layer to be at least floats;
 you only need to include `float32` and `double` on Intel CPU.
@@ -265,6 +336,7 @@ Given the nature of this project, only the sky is the limit! Here is an
 incomplete list of possible extra credits:
 - Implement extra layers such as average pooling, concatenate, etc. Feel free
  to modify the starter code to do so.
+- Implement quantization for your model and compare the performance.
 - Out-perform Tensorflow implementation.
 - Run inference on Arduino. The Arduino we have uses a 32-bit processor, which
 allows up to 4 lanes of operations.
