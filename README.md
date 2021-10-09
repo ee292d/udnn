@@ -59,30 +59,19 @@ up on `cardinal`.
   python -c "import tensorflow"
   ```
 
-Part of the assignment requires you to set up tensorflow environment on EdgeTPU. Here are the instructions:
+Part of the assignment requires you to set up udnn environment on EdgeTPU. Here are the instructions:
 1. Make sure your coral board has internet access
 2. Update the package list. Hit `y` if it prompts any error
-3. Install virtualenv and cmake
    ```
-   sudo apt install python3-virtualenv cmake python3-dev -y
+   sudo apt update
    ```
-4. Set up virtualenv
+3. Install `cmake`
    ```
-   python3 -m virtualenv --python=/usr/bin/python3 env
-   ```
-5. Activate the virtualenv env
-   ```
-   source env/bin/activate
-   ```
-6. Install tensorflow2. There is no official build for our platform so we will use
-   a community build. WARNING: this will take a long time to install!
-   ```
-   wget https://github.com/bitsy-ai/tensorflow-arm-bin/releases/download/v2.4.0/tensorflow-2.4.0-cp37-none-linux_aarch64.whl
-   pip install tensorflow-2.4.0-cp37-none-linux_aarch64.whl
+   sudo apt install cmake
    ```
 
 ##### Build the native C++ code
-Once you're in the root folder of the project, do
+Once you're in the root folder of the project, create a `build` folder and run cmake
 ```
 mkdir build
 cd build
@@ -90,7 +79,7 @@ cmake ..
 ```
 Once `cmake` successfully generates the `Makefile`, do
 ```
-make -j
+make
 ```
 This will build the entire project as well as the sample tests. To make sure it
 is working, you can type
@@ -323,13 +312,20 @@ You should at least compare the following two cases with variable data types,
 such as `int8`, `int16`, `int32`, `flaot32`, and `double`:
 1. Benchmark performance impact on Intel (all data types).
 2. Benchmark against Tensorflow on Intel CPU (`float32` and `double`).
-4. Benchmark performance impact on ARM (all data types).
+3. Benchmark performance impact on ARM (all data types) in C++ with SIMD
+   and without SIMD.
 
-It is highly recommend to use your model and wrights trained from Task 1
-for benchmark.
 
 Notice that Tensorflow CPU requires the Conv2D layer to be at least floats;
-you only need to include `float32` and `double` on Intel CPU.
+you only need to include `float32` and `double` on Intel CPU when comparing
+with Tensorflow.
+
+
+To make a fair comparison, make sure that you have enabled the release build
+for C++. To do so, use the following cmake command inside your build folder:
+```
+cmake .. -DCMAKE_BUILD_TYPE=Release
+```
 
 ### Extra credit:
 Given the nature of this project, only the sky is the limit! Here is an
