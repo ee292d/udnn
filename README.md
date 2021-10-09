@@ -285,9 +285,6 @@ class is already memory aligned. You can read `tests/test_simd.cc` to see
 how to use the SIMD library. In particular `TEST(simd, add)` demonstrates
 idiomatic way to write SIMD arithmetic.
 
-Keep in mind that not all layers can be implemented in SIMD easily, such as
-Dropout layer.
-
 Once you're done, you can use the unit tests you wrote from Task 2 to test
 against your SIMD implementation. They should pass all the tests if your
 SIMD implementation is correct.
@@ -295,10 +292,6 @@ SIMD implementation is correct.
 Since xsimd is a portable library, you can develop your code on your own
 Intel/AMD machine. However, before you continue to Task 4, make sure that
 your code can be compiled and executed on an ARM CPU.
-
-Some layers may require some "tricks" with SIMD implementation. For instance,
-you can pre-compute the mask for drop out layer implementation with a
-random number generator (this is what actually happens under the hood.)
 
 ### Task 4: Benchmark your SIMD implementation and further optimization
 You should benchmark your SIMD version of udnn against Tensorflow2 on your
