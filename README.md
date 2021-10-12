@@ -166,12 +166,12 @@ learn or experiment more about the Python bindings.
 
 ### Python helper code
 `udnn/tensor.py` offers some utility functions to instantiate or convert numpy
-array into tensor, the usage is
+array into tensor. If we want to instantiate a `Tensor` with signed 8-bit byte
+and shape `(4, 3, 2, 1)`, we can simply do
 ```Python
 t = tensor((4, 3, 2, 1), "int8")
 ```
-If we want to instantiate a `Tensor` with signed 8-bit byte and shape
-`(4, 3, 2, 1)`.
+
 Since we have implemented standard Python buffer protocol for you, you can also
 pass in a numpy array with corresponding type:
 ```Python
@@ -185,7 +185,7 @@ the numpy array when necessary.
 C++ layer with `*args`, where `args` are the same constructor parameter in your
 C++ code.
 
-`udnn/model.py` allows you construct a model in Python as well as load weights
+`udnn/model.py` allows you to construct a model in Python as well as load weights
 from or dump weights to a folder. It mimics some interface of the `keras` 
 `Model` class. You can see more usage in `tests/test_model.py`.
 
