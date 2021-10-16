@@ -18,7 +18,7 @@ std::string get_temp_dir() {
   }
   return std::string(buffer);
 #else
-  return "/tmp";
+  return "./";
 #endif
 }
 
