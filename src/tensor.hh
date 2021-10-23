@@ -112,7 +112,7 @@ public:
   }
 
   inline auto begin() { return owned_data_.begin(); }
-  inline auto end() { return owned_data_.begin(); }
+  inline auto end() { return owned_data_.end(); }
 
   inline Tensor(const Tensor<T> &other) : stride_(other.stride()) {
     size = other.size;
