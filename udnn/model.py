@@ -12,6 +12,7 @@ class Model:
     def add_layer(self, layer_name, layer):
         self.__model.add_layer(layer_name, layer)
         self.__layers.append(layer)
+        return layer
 
     def predict(self, input_tensor):
         out_type = self.__model.out_type()
@@ -60,6 +61,15 @@ class Model:
 
     def dump_weights_to_dir(self, dir_name):
         import os
+        import json
+        if not os.path.exists(dir_name):
+            os.makedirs(dir_name, exist_ok=True)
+        with open(os.path.join(dir_name, "meta.json"), "w+") as f:
+            data = {"quantized": self.__model.quantized, "weights": {}}
+            for layer in self.__layers:
+                data["weights"][layer.name] = [layer.quantization_bias, layer.quantization_scale]
+            json.dump(data, f)
+
         for layer in self.__layers:
             if layer.has_weights:
                 # suffix _w for weights
@@ -74,6 +84,11 @@ class Model:
 
     def load_weights_from_dir(self, dir_name):
         import os
+        import json
+
+        with open(os.path.join(dir_name, "meta.json")) as f:
+            data = json.load(f)
+        self.__model.quantized = data["quantized"]
         for layer in self.__layers:
             if layer.has_weights:
                 # suffix _w for weights
@@ -85,3 +100,23 @@ class Model:
                 name = layer.name + "_b.data"
                 filename = os.path.join(dir_name, name)
                 layer.bias.load(filename)
+            layer.quantization_bias = data["weights"][layer.name][0]
+            layer.quantization_scale = data["weights"][layer.name][1]
+
+    def quantize(self, quantization_bias, quantization_scale, dtype="int8"):
+        assert dtype in {"int8", "int16"}
+        func = "quantize_int8" if dtype == "int8" else "quantize_int16"
+        model = Model()
+        model.__model.quantized = True
+        for layer in self.__layers:
+            new_layer = getattr(layer, func)(quantization_bias, quantization_scale)
+            model.add_layer(layer.name, new_layer)
+        return model
+
+    @property
+    def is_quantized(self):
+        return self.__model.quantized
+
+    @is_quantized.setter
+    def is_quantized(self, value):
+        self.__model.quantized = value

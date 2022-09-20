@@ -25,6 +25,10 @@ def test_model_load_dump():
         conv1_weights = np.random.randint(-128, high=128, size=conv1_weight_size, dtype="int8")
         conv1_bias = np.random.randint(-128, high=128, size=conv1_bias_size, dtype="int8")
         model0.load_weights([conv0_weights, conv0_bias, conv1_weights, conv1_bias])
+        # quantization
+        model0.get_layer(0).quantization_bias = 42
+        model0.get_layer(0).quantization_scale = -42
+        model0.is_quantized = True
         model0.dump_weights_to_dir(temp)
 
         # load the weights up
@@ -36,6 +40,9 @@ def test_model_load_dump():
         conv1_w = model1.get_layer(1).weights
         assert np.equal(np.array(conv0_w), conv0_weights).all()
         assert np.equal(np.array(conv1_w), conv1_weights).all()
+        assert model0.get_layer(0).quantization_bias == model1.get_layer(0).quantization_bias
+        assert model0.get_layer(0).quantization_scale == model1.get_layer(0).quantization_scale
+        assert model1.is_quantized
 
 
 def test_model_predict():
@@ -79,7 +86,7 @@ def test_model_predict():
     ref_out = ref_model.predict(input_vector.reshape([1] + list(input_size)))
     model_out = np.array(model.predict(input_vector))
     model_out = model_out.reshape(ref_out.shape)
-    assert np.isclose(model_out, ref_out, atol=1.e-6).all()
+    assert np.isclose(model_out, ref_out, atol=1.e-5).all()
 
 
 if __name__ == "__main__":

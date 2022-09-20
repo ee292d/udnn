@@ -21,7 +21,25 @@ void Model::predict(const TensorBase *tensor) {
   auto layer = layers_.front();
   do {
     // we don't do any copy here
-    layer->forward(tensor->ptr());
+    if (quantized) {
+      layer->forward_quantized(tensor->ptr());
+    } else {
+      layer->forward(tensor->ptr());
+    }
+
+    tensor = layer->out_base();
+    layer = layer->next();
+  } while (layer != nullptr);
+}
+
+void Model::predict_simd(const TensorBase *tensor) {
+  if (layers_.empty())
+    return;
+  auto layer = layers_.front();
+  do {
+    // we don't do any copy here
+    layer->forward_simd(tensor->ptr());
+
     tensor = layer->out_base();
     layer = layer->next();
   } while (layer != nullptr);

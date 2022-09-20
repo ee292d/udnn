@@ -3,10 +3,10 @@
 
 #include <cstdint>
 #include <fstream>
+#include <random>
 #include <stdexcept>
 #include <vector>
 #include <xsimd/xsimd.hpp>
-#include <random>
 
 struct TensorSize {
 public:
@@ -44,13 +44,14 @@ public:
 
 template <typename T> class Tensor : public TensorBase {
 public:
-  using vector_type =
-      std::vector<T, xsimd::aligned_allocator<T, XSIMD_DEFAULT_ALIGNMENT>>;
+  using vector_type = std::vector<T, xsimd::aligned_allocator<T>>;
 
   inline T *data() const {
     return owned ? const_cast<T *>(owned_data_.data()) : data_;
   }
-  [[nodiscard]] inline void *ptr() const override { return reinterpret_cast<void *>(data()); }
+  [[nodiscard]] inline void *ptr() const override {
+    return reinterpret_cast<void *>(data());
+  }
 
   inline Tensor(void *data, const TensorSize &size, const TensorSize &stride,
                 bool copy = false) {
@@ -70,9 +71,7 @@ public:
     }
   }
 
-  inline Tensor(): stride_({0, 0, 0, 0}) {
-    this->size = {0, 0, 0, 0};
-  }
+  inline Tensor() : stride_({0, 0, 0, 0}) { this->size = {0, 0, 0, 0}; }
 
   inline Tensor(uint32_t y, uint32_t x, uint32_t c, uint32_t k = 1) {
     owned_data_.resize(x * y * c * k);
@@ -203,7 +202,9 @@ public:
   // we have channel last implementation, which is the default for tf
   [[nodiscard]] inline TensorSize stride() const { return stride_; }
 
-  [[nodiscard]] inline size_t element_size() const override { return sizeof(T); }
+  [[nodiscard]] inline size_t element_size() const override {
+    return sizeof(T);
+  }
 
   inline static std::size_t simd_size() { return xsimd::simd_type<T>::size; }
 
@@ -213,7 +214,8 @@ public:
     std::mt19937 engine(rd());
 
     auto const total_size = size.x * size.y * size.c * size.k;
-    if constexpr (std::is_same<T, float>::value || std::is_same<T, double>::value) {
+    if constexpr (std::is_same<T, float>::value ||
+                  std::is_same<T, double>::value) {
       std::uniform_real_distribution<> d(min, max);
       for (auto i = 0; i < total_size; i++) {
         data_[i] = d(engine);

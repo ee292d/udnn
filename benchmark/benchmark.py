@@ -1,39 +1,23 @@
-from udnn import Model, Conv2D, Flatten, Dense
+from udnn import quantize, unquantize
+from tensorflow.keras import datasets
+from models import build_udnn_model
 import time
-import tensorflow as tf
 import numpy as np
+import tensorflow as tf
+import argparse
 
 
-def build_udnn_model(input_size, num_class, num_filters, kernel_size, dtype):
-    model = Model()
-    model.add_layer("conv0", Conv2D(input_size, dtype, kernel_size,
-                                    num_filters))
-    model.add_layer("conv1", Conv2D(model.get_layer(0).out.shape[:3], dtype,
-                                    kernel_size, num_filters))
-    model.add_layer("flatten0", Flatten(model.get_layer(1).out.shape[:3], dtype))
-    model.add_layer("dense0", Dense(model.get_layer(2).out.shape[:3], dtype, num_class))
-    return model
+def get_test_image():
+    (_, __), (test_images, test_labels) = datasets.cifar10.load_data()
+    # need to normalize the images
+    test_images = test_images / 255.0
+    return test_images, test_labels
 
 
-def build_tf_model(input_size, num_class, num_filters, kernel_size, dtype):
-    # setup reference model
-    ref_model = tf.keras.Sequential()
-    ref_model.add(tf.keras.layers.Input(input_size, 1, dtype=dtype))
-    ref_model.add(tf.keras.layers.Conv2D(num_filters, kernel_size,
-                                         bias_initializer="random_uniform",
-                                         dtype=dtype))
-    ref_model.add(tf.keras.layers.Conv2D(num_filters, kernel_size,
-                                         bias_initializer="random_uniform",
-                                         dtype=dtype))
-    ref_model.add(tf.keras.layers.Flatten())
-    ref_model.add(tf.keras.layers.Dense(num_class))
-    ref_model.build()
-    return ref_model
-
-
-def copy_weights(ref_model, udnn_model):
-    ref_weights = ref_model.weights
-    udnn_model.load_weights(ref_weights)
+def get_args():
+    parser = argparse.ArgumentParser("Benchmark udnn")
+    parser.add_argument("weights", type=str)
+    return parser.parse_args()
 
 
 def main():
@@ -42,32 +26,35 @@ def main():
     # CIFAR-10 has 10 classes
     num_class = 10
     # set input
-    num_filters = 32
     kernel_size = 3
     dtype = "float32"
-    num_runs = 10
+    quantized_dtype = "int16"
 
-    udnn_model = build_udnn_model(input_size, num_class, num_filters, kernel_size, dtype)
-    ref_model = build_tf_model(input_size, num_class, num_filters, kernel_size, dtype)
-    copy_weights(ref_model, udnn_model)
+    args = get_args()
+    weight_dir = args.weights
 
-    input_vector = np.ones(input_size, dtype=dtype)
-    input_ref_vector = input_vector.reshape([1] + list(input_size))
+    udnn_model = build_udnn_model(input_size, num_class, kernel_size, quantized_dtype)
+    udnn_model.load_weights_from_dir(weight_dir)
 
-    start = time.time()
-    for i in range(num_runs):
-        ref_model.predict(input_ref_vector)
-    end = time.time()
-    ref_time = (end - start) / num_runs * 1000
+    # read quantization from the model
+    bias = udnn_model.get_layer(0).quantization_bias
+    scale = udnn_model.get_layer(0).quantization_scale
 
-    start = time.time()
-    for i in range(num_runs):
-        udnn_model.predict(input_vector)
-    end = time.time()
-    udnn_time = (end - start) / num_runs * 1000
+    test_images, test_labels = get_test_image()
 
-    print("Tensorflow:", ref_time)
-    print("uDNN:", udnn_time)
+    num_test = 100
+    test_images = test_images[:num_test]
+    test_labels = test_labels[:num_test]
+
+    total_time = 0
+    for i in range(len(test_labels)):
+        image = np.array(test_images[i], dtype=dtype)
+        image = quantize(image, bias, scale, dtype=quantized_dtype)
+        start = time.time()
+        udnn_model.predict(image)
+        t = time.time() - start
+        total_time += t
+    print("Average time:", total_time / num_test)
 
 
 if __name__ == "__main__":

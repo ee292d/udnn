@@ -1,3 +1,4 @@
+
 # EE292D Micro DNN (udnn)
 
 ## Overview
@@ -16,7 +17,7 @@ git clone --recurse-submodules -j2 https://github.com/ee292d/udnn.git
 This project has been thoroughly tested on Linux. You should be able to run it
 on OSX, but we cannot guarantee support for that. If you do not have access
 to a Linux machine, you can `ssh` into `cardinal.stanford.edu` to use
-Stanford's linux machines. 
+Stanford's linux machines.
 
 #### Prerequisite
 - A C\++14 compiler: GCC 5.4+ or Clang++ 3.4+
@@ -46,7 +47,7 @@ up on `cardinal`.
   source env/bin/activate
   ```
 4. Download the tensorflow wheel without AVX instruction. This is necessary because the stanford PyPI
-  wheel compiles against AVX but `cardinal` machines doesn't have one
+   wheel compiles against AVX but `cardinal` machines doesn't have one
   ```
   wget https://tf.novaal.de/barcelona/tensorflow-2.4.3-cp36-cp36m-linux_x86_64.whl
   ```
@@ -186,162 +187,193 @@ C++ layer with `*args`, where `args` are the same constructor parameter in your
 C++ code.
 
 `udnn/model.py` allows you to construct a model in Python as well as load weights
-from or dump weights to a folder. It mimics some interface of the `keras` 
+from or dump weights to a folder. It mimics some interface of the `keras`
 `Model` class. You can see more usage in `tests/test_model.py`.
-
-### Provided sample tests
-We have also provided some sample tests in `tests/` folder to help you become
-familiar with the environment. They primarily serve as an example of how to
-use the starter code API. You should definitely add more tests as you implement
-more layers and models as you finish up the project.
-
-To test out native C++ tests, simply do `make test` in your `build` folder.
-
-To test out python-based tests, first install `pytest` then use `pytest`:
-
-```
-pip install pytest tensorflow
-pytest test/
-```
 
 ### A Note on Debugging
 Because this project involves testing both C++ and its Python binding, debugging can
 be a pain. Here is the recommended debugging strategy:
 
 1. Write your C++ unit test first. You can either use `gdb` or simple print statement
-to figure out which parts is wrong.
+   to figure out which parts is wrong.
 2. Once C++ is working, write out your Python tests. If you want to use `gdb` for
-testing, you need to compile the Python binding with debugging symbol:
+   testing, you need to compile the Python binding with debugging symbol:
 
   ```
   $ DEBUG=1 pip install -e .
   ```
 
-  Then gdb the python binary
+Then gdb the python binary
   ```
   gdb python
   ```
-  Then run your script in `gdb` with `run` command.
+Then run your script in `gdb` with `run` command.
 
-## Project Tasks
-There are several task you need to accomplish in this project. Although they are
-not required to be completed in order, it is highly recommended to do so as it
-makes the debugging easier.
+## Assignment Tasks
+There are several task you need to accomplish in this assignment. These tasks
+require lots of debugging, so make sure to start early!
 
-### Task 1: Train a CNN for CIFAR-10
-Your model should achieve at least 60% classification accuracy on CIFAR-10.
-Although you're free to use any framework you want, the start code is provided
-with Tensorflow 2 in mind.
-
-You will need weights for your own udnn model, since we are not going to
-implement training in this project.
-
-If you're unsure about how to set up a network to train or how to obtain
-the dataset, Tensorflow' official website has an excellent
-[code example](https://www.tensorflow.org/tutorials/images/cnn) of setting
-up basic layers and train them against CIFAR-10. Keep in mind that you have to
-implement all the layers from scratch in Task 2, so don't be too fancy!
-
-### Task 2: Implement layers in C++
-You will implement these layers in C++ using the given starter code. For each
-layer, you are required to write a corresponding `pytest` unit test to test
-the arithmetic against Tensorflow 2.
-
-You are required to implement the following set of layers, in addition to the
-layers you used in Task 1:
+### Task 1: Implement layers in C++
+You will implement these layers in C++ using the given starter code:
 - Conv2D
 - Dense
 - Relu
-- Sigmoid
-- Flatten
-- MaxPooling2D
-- MinPooling2D [optional]
-- DropOut
 
-To add a custom layer to Python binding, you can look at the following code in
-`python/udnn.cc`:
-```C++
-setup_layer<FlattenLayer, const TensorSize &>(m, "FlattenLayer");
+In particular, you are required to implement the `forward()` functions and
+`activate_function` function. You can check out how `MaxPoolingLayer` and
+`FlattenLayer` are implemented.
+
+Once your implementation is working, you can try out
+
+```
+pytest tests/test_layer.py tests/test_model.py -v
 ```
 
-You need to put the class type in the first template argument, followed
-by its constructor signature. The string `"FlattenLayer` will be the class
-name in Python. Then you should also add a helper function to
-create a corresponding layer in `udnn/layer.py`. There are example code for you
-to re-use.
+to see if your implementation matches with Tensorflow's. We will use this
+test script to grade this part of the homework. Notice that in this part of
+the assignment, performance is not a concern, as long as it is correct.
 
-You are required to write unit tests for each layer you implement, using
-the same style as in `tests/test_layer.py`, i.e. constructing Tensorflow
-layers with random input/weights and compare it against your own
-implementation. Due to numeric precision error, you should use a delta
-when comparing results.
-
-### Task 3: Enhance C++ implementation with SIMD
-You are required to re-implement all the layers with SIMD. We have
+### Task 2: Enhance C++ implementation with SIMD
+You are required to re-implement some layers with SIMD. We have
 provided you with a nice SIMD library called
 [xsimd](https://xsimd.readthedocs.io/en/latest/). The data in the `Tensor`
 class is already memory aligned. You can read `tests/test_simd.cc` to see
 how to use the SIMD library. In particular `TEST(simd, add)` demonstrates
 idiomatic way to write SIMD arithmetic.
 
-Once you're done, you can use the unit tests you wrote from Task 2 to test
+Once you're done, you can use `tests/test_layer_simd.py` to test
 against your SIMD implementation. They should pass all the tests if your
 SIMD implementation is correct.
 
 Since xsimd is a portable library, you can develop your code on your own
-Intel/AMD machine. However, before you continue to Task 4, make sure that
-your code can be compiled and executed on an ARM CPU.
+Intel/AMD machine.
 
-### Task 4: Benchmark your SIMD implementation and further optimization
-You should benchmark your SIMD version of udnn against Tensorflow2 on your
-own machine as well as on your edge device, and use that to further optimize
-your SIMD implementation. Keep in mind that arithmetic operations are only
-a portion of time that the CPU spends executing the model, cache also plays
-an important role. You can experiment around how to make your tensor storage
-more cache friendly!
+Layers required to use SIMD:
+- Dense
+- Conv2D
 
-You should at least compare the following two cases with variable data types,
-such as `int8`, `int16`, `int32`, `flaot32`, and `double`:
-1. Benchmark performance impact on Intel (all data types in C++) on `Conv2D`
-   and `Dense` layers.
-2. Benchmark against Tensorflow on Intel CPU (`float32` and `double`) on model
-   predication. This should be done in Python.
-3. Benchmark performance impact on ARM (all data types) in C++ with SIMD
-   and without SIMD.
+### Task 3: Quantization
+You are required to re-implementation some layers with quantization.
+We have provided you with another starter code `quantize.hh`.
+This file contains many helper functions that help you to convert floating point
+to fixed points, and to quantized numbers.
 
+To understand how quantization works in the system, let's review how floating points
+can be quantized to fixed point with bias and scaling factors. The major difference
+between floating points and fixed points is that the decimal position remains the same
+in fixed point numbers. An illustration for a 8-bit fixed point is shown below:
 
-Notice that Tensorflow CPU requires the Conv2D layer to be at least floats;
-you only need to include `float32` and `double` on Intel CPU when comparing
-with Tensorflow.
-
-
-To make a fair comparison, make sure that you have enabled the release build
-for C++. To do so, use the following cmake command inside your build folder:
 ```
-cmake .. -DCMAKE_BUILD_TYPE=Release
+[ ][ ][ ][ ].[ ][ ][ ][ ]
+ |          |
+sign     decimal
 ```
 
-We have included the example C++ benchmark code in `benchmark/benchmark.cc`
-and Python benchmark code in `benchmark/benchmark.py`. Feel free
-to build your own benchmark code on top of that.
+Notice that we use the top bit as sign bit, 3 bits for the integer parts, and
+4 bits for the fraction. The decimal position can be arbitrary, and we use the
+middle position since it is easier to implement multiplication.
 
-### Extra credit:
-Given the nature of this project, only the sky is the limit! Here is an
-incomplete list of possible extra credits:
-- Implement extra layers such as average pooling, concatenate, etc. Feel free
- to modify the starter code to do so.
-- Implement quantization for your model and compare the performance.
-- Out-perform Tensorflow implementation.
-- Run inference on Arduino. The Arduino we have uses a 32-bit processor, which
-allows up to 4 lanes of operations.
-- ...
+The arithmetics for fixed point straightforward. For addition and subtraction,
+we can reuse the same integer arithmetics since the decimal position doesn't
+change. For multiplication, however, the decimal position is shifted and we
+need to take actions to prevent overflow, as shown below:
+
+
+```
+[ ][ ][ ][ ].[ ][ ][ ][ ] * [ ][ ][ ][ ].[ ][ ][ ][ ]
+ |          |                |          |
+sign     decimal            sign     decimal
+
+=
+
+[ ][ ][ ][ ][ ][ ][ ][ ].[ ][ ][ ][ ][ ][ ][ ][ ]
+ |                      |
+sign                 decimal
+```
+
+To convert it back to the 8-bit fixed point, we need to round the result and
+clamp the output, as shown below:
+
+
+```
+[ ][ ][ ][ ]{[ ][ ][ ][ ].[ ][ ][ ][ ]}[ ][ ][ ][ ]
+              |          |
+             sign     decimal
+```
+
+Function `fix_mult` implements this multiplication algorithm. Notice it uses
+truncation rounding mode, which can be less accurate than other rounding modes.
+You are encouraged to implement better fixed point multiplication schemes.
+
+Now that we have covered fixed point arithmetics, let's take a look at how quantization
+works. Because the weights can form a much larger range than the fixed points, we
+need to scale the numbers down to a much smaller range to prevent overflow. To do
+so, we first define a zero point $a$, called bias. Then we scale everything
+using a scaling factor $s$. Given any number $x$, the quantization equation is
+
+$$ x' = \frac{x - a}{s}$$
+
+And the un-quantization equation is
+
+$$ x = x' * s + a $$
+
+The arithmetics for scaled fixed points is a little more complex. For addition/subtraction,
+we have
+
+$$ x' + y' = \frac{x - a}{s} + \frac{y - a}{s} = \frac{x + y - 2a}{s} $$
+
+Notice that the actual addition result is
+
+$$ quantize(x + y) = \frac{x + y - a}{s} $$
+
+We need to adjust the output of $x' + y'$ to get the correct result for $quantize(x + y)$.
+The same logic applies to multiplication! You are encouraged to work out the math before
+start to implement the code!
+
+In `quantize.hh`, you will see some blank functions. In particular, `quantize`, `unquantize`,
+`quantize_add` and `quantize_mult`. We recommended you implement these functions first and
+test it out with `pytest tests/test_quantize.py -v` to make sure your implementation works.
+Then you can work on `forward_quantized()` in `layer.hh`, which is straightforward.
+
+### Task 4: Further optimization
+I'm sure you've noticed that the implementation you have in Task 3 is very inefficient! We
+can pre-compute many coefficients to avoid calculating the same value repeatedly. You should
+complete `quantize_add_opt` and `quantize_mult_opt` to use these pre-computed coefficients,
+and then use them in `forward_quantize()`. Feel free to adjust the function signatures as you
+see fit.
+
+Now that you have learned different ways to speed up computation, it is time to test it out!
+You are free to make any SIMD and quantization optimization to make your code more performant.
+The benchmark code takes arbitrary quantization bias and scale (in fixed point format). You
+can adjust the number in `prepare_submission.py` to make the model more accurate. By default,
+the bias is 0 and the scale is 4.
+
+Here are some hints where you can optimize:
+
+1. Although we're using quantized numbers, we are still computing values one at a time. If there
+   is no overflow, there is no difference adding multiple fixed points at once, i.e. treat 4 8-bit
+   fixed-points as a 32-bit integer and add them up. You can even apply SIMD to make the lanes
+   wider!
+2. Memory is another performance bottleneck. You can reduce the number of memory transpose by
+   pre-transposing the weights!
+3. You can run analysis on all activation values and determine the best scaling coefficients
+
+The final scoring metrics is
+
+$$ score = \frac{accuracy}{time} $$
+
+where the time is measured wall clock time using CIFAR-10 test images. You can see more details
+in `benchmark/benchmark.py`
 
 ### Useful links:
 - pybind11: https://pybind11.readthedocs.io/
 - xsimd: https://xsimd.readthedocs.io/en/stable/index.html
 - Tensorflow keras layers: https://www.tensorflow.org/api_docs/python/tf/keras/layers
+- Pete Warden's blog posts: https://petewarden.com/2016/05/03/how-to-quantize-neural-networks-with-tensorflow/
 
 ## Submission
-- Your source code without build artifacts in a zip file. Please make sure to
-  populate the git submodules.
-- Your write up on Task 4 in txt or pdf format.
+Run the following command to get `submission.zip` for all tasks:
+
+```
+python benchmark/prepare_submission.py
+```

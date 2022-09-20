@@ -9,6 +9,7 @@
 
 void init_tensor(py::module &m);
 void init_model(py::module &m);
+void init_quantize(py::module &m);
 
 void init_layer(py::module &m) {
   py::class_<LayerBase>(m, "LayerBase")
@@ -36,11 +37,15 @@ void init_layer(py::module &m) {
   setup_layer<DenseLayer, const TensorSize &, uint32_t>(m, "DenseLayer");
   setup_layer<Conv2DLayer, const TensorSize &, uint32_t, uint32_t>(
       m, "Conv2DLayer");
+  setup_layer<MaxPoolingLayer, const TensorSize &, uint32_t>(m,
+                                                             "MaxPoolingLayer");
+  setup_layer<ReLuActivationLayer, const TensorSize &>(m,
+                                                       "ReLuActivationLayer");
 }
-
 
 PYBIND11_MODULE(_udnn, m) {
   init_tensor(m);
   init_layer(m);
   init_model(m);
+  init_quantize(m);
 }

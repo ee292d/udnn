@@ -170,3 +170,6 @@ cmake-build-*
 # testing directory
 temp
 *.dat
+
+# submission directory
+submission*

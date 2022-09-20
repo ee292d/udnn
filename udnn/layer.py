@@ -27,6 +27,8 @@ def Flatten(shape, dtype, *args):
     return __get_layer(shape, dtype, "Flatten", *args)
 
 
+def MaxPooling(shape, dtype, *args):
+    return __get_layer(shape, dtype, "MaxPooling", *args)
 
 
 def Conv2D(shape, dtype, *args):
@@ -35,3 +37,7 @@ def Conv2D(shape, dtype, *args):
 
 def Dense(shape, dtype, *args):
     return __get_layer(shape, dtype, "Dense", *args)
+
+
+def ReLu(shape, dtype, *args):
+    return __get_layer(shape, dtype, "ReLuActivation", *args)

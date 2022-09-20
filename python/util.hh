@@ -3,22 +3,21 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-
 namespace py = pybind11;
 
-template <typename T> constexpr const char *type_to_str() {
+template <typename T> constexpr const char *type_to_str(bool lower = false) {
   if (std::is_same<T, int8_t>()) {
-    return "Int8";
+    return lower ? "int8" : "Int8";
   } else if (std::is_same<T, int16_t>()) {
-    return "Int16";
+    return lower ? "int16" : "Int16";
   } else if (std::is_same<T, int32_t>()) {
-    return "Int32";
+    return lower ? "int32" : "Int32";
   } else if (std::is_same<T, int64_t>()) {
-    return "Int64";
+    return lower ? "int64" : "Int64";
   } else if (std::is_same<T, float>()) {
-    return "Float";
+    return lower ? "float32" : "Float";
   } else if (std::is_same<T, double>()) {
-    return "Double";
+    return lower ? "float64" : "Double";
   } else {
     throw std::invalid_argument("Unable to convert type");
   }
@@ -118,9 +117,10 @@ template <typename T> py::class_<Tensor<T>> setup_tensor(py::module &m) {
            })
       .def("dump", py::overload_cast<const std::string &>(&Tensor<T>::dump))
       .def("load", &Tensor<T>::load_from_file)
-      .def("randomize", &Tensor<T>::randomize);
+      .def("randomize", &Tensor<T>::randomize)
+      .def_property_readonly(
+          "dtype", [](const Tensor<T> &tensor) { return type_to_str<T>(); });
 }
-
 
 template <typename T> void setup_model_convert_out(py::class_<Model> &model) {
   std::string name = "out_as_" + std::string(type_to_str<T>());
@@ -134,7 +134,6 @@ template <typename T> void setup_model_convert_out(py::class_<Model> &model) {
                          TensorSize::default_stride(out->size), true);
   });
 }
-
 
 template <template <typename> class C, typename T, typename... ctor>
 void setup_layer_t(py::module &m, std::string base_name) {
@@ -150,6 +149,22 @@ void setup_layer_t(py::module &m, std::string base_name) {
              // free it
              delete t;
            })
+      .def("forward_simd", &C<T>::forward_simd)
+      .def("forward_simd",
+           [](C<T> &layer, const py::buffer &b) {
+             auto t = create_tensor_from_buffer<T>(b);
+             layer.forward_simd(*t);
+             // free it
+             delete t;
+           })
+      .def("forward_quantized", &C<T>::forward_quantized)
+      .def("forward_quantized",
+           [](C<T> &layer, const py::buffer &b) {
+             auto t = create_tensor_from_buffer<T>(b);
+             layer.forward_quantized(*t);
+             // free it
+             delete t;
+           })
       .def_property_readonly("out", &C<T>::out)
       .def("load_weights",
            py::overload_cast<const Tensor<T> &>(&C<T>::load_weights))
@@ -161,7 +176,7 @@ void setup_layer_t(py::module &m, std::string base_name) {
              // need to delete it to avoid memory leak
              delete tensor;
            })
-          // return reference since the C++ object is managing the memory
+      // return reference since the C++ object is managing the memory
       .def_property_readonly("weights", &C<T>::get_weights,
                              py::return_value_policy::reference)
       .def_property_readonly("bias", &C<T>::get_bias,
@@ -178,7 +193,25 @@ void setup_layer_t(py::module &m, std::string base_name) {
              delete tensor;
            })
       .def_property_readonly("weights_size", &C<T>::weights_size)
-      .def_property_readonly("bias_size", &C<T>::bias_size);
+      .def_property_readonly("bias_size", &C<T>::bias_size)
+      .def_readwrite("quantization_bias", &C<T>::quantization_bias)
+      .def_readwrite("quantization_scale", &C<T>::quantization_scale)
+      .def(
+          "quantize_int8",
+          [](const C<T> &layer, int32_t quantize_bias, int32_t quantize_scale) {
+            return layer.template quantize<int8_t>(
+                static_cast<int8_t>(quantize_bias),
+                static_cast<int8_t>(quantize_scale));
+          },
+          py::arg("quantize_bias"), py::arg("quantize_scale"))
+      .def(
+          "quantize_int16",
+          [](const C<T> &layer, int32_t quantize_bias, int32_t quantize_scale) {
+            return layer.template quantize<int16_t>(
+                static_cast<int16_t>(quantize_bias),
+                static_cast<int16_t>(quantize_scale));
+          },
+          py::arg("quantize_bias"), py::arg("quantize_scale"));
 }
 
 template <template <typename> class C, typename... ctor>
@@ -190,4 +223,3 @@ void setup_layer(py::module &m, std::string base_name) {
   setup_layer_t<C, float, ctor...>(m, base_name);
   setup_layer_t<C, double, ctor...>(m, base_name);
 }
-
