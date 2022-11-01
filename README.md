@@ -360,7 +360,7 @@ Here are some hints where you can optimize:
 
 The final scoring metrics is
 
-$$ score = \frac{accuracy}{time} $$
+$$ score = \frac{1}{time} $$
 
 where the time is measured wall clock time using CIFAR-10 test images. You can see more details
 in `benchmark/benchmark.py`
