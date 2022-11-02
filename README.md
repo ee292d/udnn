@@ -49,11 +49,11 @@ up on `cardinal`.
 4. Download the tensorflow wheel without AVX instruction. This is necessary because the stanford PyPI
    wheel compiles against AVX but `cardinal` machines doesn't have one
   ```
-  wget https://tf.novaal.de/barcelona/tensorflow-2.4.3-cp36-cp36m-linux_x86_64.whl
+  wget https://tf.novaal.de/barcelona/tensorflow-2.8.0-cp310-cp310-linux_x86_64.whl
   ```
 5. Install dependencies, which may take a while
   ```
-  pip install cmake tensorflow-2.4.3-cp36-cp36m-linux_x86_64.whl
+  pip install cmake tensorflow-2.8.0-cp310-cp310-linux_x86_64.whl protobuf==3.20.3
   ```
 6. Test out if tensorflow has installed properly
   ```
