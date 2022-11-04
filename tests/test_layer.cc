@@ -34,8 +34,8 @@ TEST(layer, fc) {
   Tensor<int8_t> input_value(1, 8, 1);
   // they all have weights 1
   for (auto x = 0; x < 8; x++) {
-    fc_layer.set_weight(x, 0, 0, 1.0f);
-    fc_layer.set_weight(x, 1, 0, 1.0f);
+    fc_layer.set_weight(x, 0, 0, 0, 1.0f);
+    fc_layer.set_weight(x, 1, 0, 0, 1.0f);
     input_value(0, x, 0) = 2.0f;
   }
 

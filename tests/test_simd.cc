@@ -1,5 +1,8 @@
 #include "../extern/googletest/googletest/include/gtest/gtest.h"
 #include "../src/tensor.hh"
+// NOTICE THIS STL INCLUDE!
+#include "xsimd/stl/algorithms.hpp"
+
 
 TEST(simd, transform) {
   constexpr int size = 8;
