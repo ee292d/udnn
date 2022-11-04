@@ -60,17 +60,6 @@ up on `cardinal`.
   python -c "import tensorflow"
   ```
 
-Part of the assignment requires you to set up udnn environment on EdgeTPU. Here are the instructions:
-1. Make sure your coral board has internet access
-2. Update the package list. Hit `y` if it prompts any error
-   ```
-   sudo apt update
-   ```
-3. Install `cmake`
-   ```
-   sudo apt install cmake
-   ```
-
 ##### Build the native C++ code
 Once you're in the root folder of the project, create a `build` folder and run cmake
 ```
